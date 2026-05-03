@@ -5,7 +5,8 @@ export const MOCK_AGENTS: Agent[] = [
   {
     id: "agent_macro_001",
     name: "Macro Oracle",
-    description: "Macro, on-chain, and derivatives analysis.",
+    description:
+      "Reads macro regimes, on-chain flows, and derivatives positioning to reason about where risk assets may trade next.",
     aiverseUrl: "https://aiverse.example/agents/macro-oracle",
   },
   {
@@ -44,7 +45,7 @@ export const SEED_COMPETITIONS: Competition[] = [
       "What will the BTC price on Binance be on May 15th at 00:00 UTC?",
     deadline: "May 15, 00:00 UTC",
     status: "active",
-    allowedAgentIds: ["agent_macro_001", "agent_sent_002", "vibes_agent_004", "technical_agent_005"],
+    allowedAgentIds: ["agent_macro_001", "vibes_agent_004", "technical_agent_005"],
     submissionsCount: 3,
   },
   {
@@ -64,8 +65,8 @@ export const SEED_SUBMISSIONS: Submission[] = [
   {
     id: "sub_1",
     competitionId: "comp_btc_001",
-    agentId: "agent_sent_002",
-    agentName: "Sentiment Scout",
+    agentId: "vibes_agent_004",
+    agentName: "John Vibes",
     response: "Mock submission for leaderboard.",
     score: 91,
     txHash:

@@ -19,7 +19,6 @@ import { CopyButton } from "@/components/CopyButton";
 import { AgentCard } from "@/components/AgentCard";
 import { SuccessCard } from "@/components/SuccessCard";
 import { StatusBadge } from "@/components/StatusBadge";
-import { BtcRoundDemoPanel } from "@/components/BtcRoundDemoPanel";
 import {
   getBtcCompetitionId,
   isBtcContractConfigured,
@@ -176,10 +175,12 @@ export function CompetitionDetailClient({ competitionId }: Props) {
 
   const isResolved = competition.status === "resolved";
 
+  /** Only the configured BTC competition sends a real wallet tx; mock path does not. */
+  const needsWalletForSubmit = btcOnchain;
+
   const canSubmit =
     !isResolved &&
-    isConnected &&
-    onCorrectNetwork &&
+    (!needsWalletForSubmit || (isConnected && onCorrectNetwork)) &&
     Boolean(selectedAgentId) &&
     response.trim().length > 0 &&
     phase !== "pending" &&
@@ -189,6 +190,33 @@ export function CompetitionDetailClient({ competitionId }: Props) {
     .filter((r) => r.competitionId === competitionId)
     .sort((a, b) => b.score - a.score)
     .slice(0, 3);
+
+  const leaderboardPreview =
+    topTwo.length > 0
+      ? topTwo.map((r) => ({
+          key: r.id,
+          label: r.agentName,
+          score: r.score,
+          isExample: false,
+        }))
+      : (() => {
+          const a0 = agents[0]?.name ?? "Macro Oracle";
+          const a1 = agents[1]?.name ?? "John Vibes";
+          return [
+            {
+              key: `example-${competitionId}-1`,
+              label: a0,
+              score: 88,
+              isExample: true,
+            },
+            {
+              key: `example-${competitionId}-2`,
+              label: agents.length >= 2 ? a1 : "Agent Quanta",
+              score: 84,
+              isExample: true,
+            },
+          ];
+        })();
 
   return (
     <div className="min-h-screen bg-surface-muted">
@@ -320,16 +348,24 @@ export function CompetitionDetailClient({ competitionId }: Props) {
                       ? "Confirming on 0G…"
                       : "⛓ Post response onchain"}
                 </button>
-                {!isConnected && (
+                {needsWalletForSubmit && !isConnected && (
                   <p className="text-xs text-amber-800">
-                    Connect your wallet to submit.
+                    Connect your wallet on 0G to post this BTC prediction onchain.
                   </p>
                 )}
-                {isConnected && !onCorrectNetwork && (
+                {needsWalletForSubmit && isConnected && !onCorrectNetwork && (
                   <p className="text-xs text-amber-800">
                     Switch to 0G to submit onchain.
                   </p>
                 )}
+                {!selectedAgentId &&
+                  response.trim().length > 0 &&
+                  phase !== "pending" &&
+                  phase !== "confirming" && (
+                    <p className="text-xs text-slate-600">
+                      Select an agent in step 2 to enable submit.
+                    </p>
+                  )}
                 {phase === "error" && errorMsg && (
                   <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-900">
                     {errorMsg}
@@ -361,15 +397,6 @@ export function CompetitionDetailClient({ competitionId }: Props) {
           )}
         </div>
 
-        {btcOnchain && !isResolved && (
-          <BtcRoundDemoPanel
-            competitionId={competitionId}
-            onChainUpdated={() => {
-              void refreshBoard();
-            }}
-          />
-        )}
-
         <section className="rounded-2xl border border-slate-100 bg-white p-5 shadow-card">
           <div className="mb-3 flex items-center justify-between gap-2">
             <h2 className="text-base font-semibold text-slate-900">
@@ -382,16 +409,26 @@ export function CompetitionDetailClient({ competitionId }: Props) {
               View full leaderboard →
             </Link>
           </div>
+          {topTwo.length === 0 && (
+            <p className="mb-2 text-xs text-slate-500">
+              Example standings — real submissions replace these after you post.
+            </p>
+          )}
           <ol className="space-y-2 text-sm text-slate-700">
-            {topTwo.length === 0 && (
-              <li className="text-slate-500">No submissions yet.</li>
-            )}
-            {topTwo.map((r, i) => (
-              <li key={r.id} className="flex justify-between gap-2">
+            {leaderboardPreview.map((r, i) => (
+              <li
+                key={r.key}
+                className={`flex justify-between gap-2 ${r.isExample ? "text-slate-600" : ""}`}
+              >
                 <span>
-                  #{i + 1} {r.agentName}
+                  #{i + 1} {r.label}
+                  {r.isExample && (
+                    <span className="ml-1.5 text-xs font-normal text-slate-400">
+                      (example)
+                    </span>
+                  )}
                 </span>
-                <span className="font-semibold">{r.score}</span>
+                <span className="font-semibold tabular-nums">{r.score}</span>
               </li>
             ))}
           </ol>

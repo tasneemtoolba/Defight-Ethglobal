@@ -2,7 +2,7 @@
 
 Defight is an onchain benchmark arena for AI agents competing on **0G**.
 
-Users can create AI challenges, open a competition, select an AIVerse-style agent, copy the official question, ask the agent, paste the response, and post that response onchain. For the **BTC Price Prediction** track, the deployed **`BTCPricePredictionBenchmark`** contract records integer predictions, supports resolution and scoring, and feeds the in-app leaderboard. Other competitions can run in **mock mode** (localStorage + simulated txs) until wired to Solidity.
+Users can create AI challenges, open a competition, select an AIVerse-style agent, copy the official question, ask the agent, paste the response, and post that response onchain. For the **BTC Price Prediction** track, the deployed **`BTCPricePredictionBenchmark`** contract records integer predictions via **`submitResponse`**; settlement (**`provideActualPrice`** / **`scoreInputs`**) is left to operators or tooling outside the app, after which the in-app leaderboard can read **`showLeaderboard`**. Other competitions can run in **mock mode** (localStorage + simulated txs) until wired to Solidity.
 
 ## Short description
 
@@ -19,8 +19,7 @@ Defight is a hackathon-ready web app plus Solidity benchmarks. Anyone can define
 3. Select an allowed agent.
 4. **Copy question & open AIVerse** → ask the agent → paste the answer.
 5. **Post response onchain** (wallet on 0G) — for BTC, the app parses a digit price and calls `submitResponse`; mock path simulates a tx.
-6. For BTC demos: optional **Provide actual price** / **Score round** panel to finish the onchain scoring cycle.
-7. View score (when available), tx hash, 0G explorer link, and leaderboard.
+6. View tx hash, 0G explorer link, and leaderboard. For BTC, a **display score** appears only after the contract round has been settled (`provideActualPrice` then `scoreInputs` — run those via your own wallet script, cast, or block explorer if you need onchain scores; the app does not duplicate that UI).
 
 **Resolved competitions** (e.g. seed “SOL Volatility Range”): the detail page shows the question and results preview only — agent selection, paste, and submit steps are hidden.
 
@@ -67,7 +66,7 @@ After confirmation, the UI shows tx link to **0G explorer**, score when derivabl
 |------|----------------|
 | **Competitions** | `/competitions` — search, filters, cards, recent submissions + leaderboard preview. |
 | **Create** | `/competitions/create` — form + preview; persists locally. |
-| **Submit flow** | `/competitions/[id]` — stepper: question → agent → paste → submit; wrong-network banner; BTC demo operator panel when onchain BTC is enabled. |
+| **Submit flow** | `/competitions/[id]` — stepper: question → agent → paste → submit; wrong-network banner; onchain BTC shows a digit-format hint for `submitResponse`. |
 | **Leaderboard** | `/leaderboard` — tabs, stats, table, explorer links. |
 | **Branding** | `public/defight-logo.png`, `DefightLogo` in header/footer, favicon via `metadata.icons` in `app/layout.tsx`. |
 
@@ -155,7 +154,6 @@ Defight-Ethglobal/
 │   ├── CompetitionDetailClient.tsx
 │   ├── CreateChallengeClient.tsx
 │   ├── LeaderboardPageClient.tsx
-│   ├── BtcRoundDemoPanel.tsx
 │   ├── CompetitionCard.tsx
 │   ├── AgentCard.tsx
 │   ├── StepCard.tsx
@@ -234,8 +232,7 @@ Or use **Foundry** / **Remix** with **`pragma solidity ^0.8.35`**.
 2. Connect wallet → **Switch to 0G** if prompted.
 3. Select an agent → **Copy question & open AIVerse** → get a numeric answer → paste (digits only for contract path).
 4. **Post response onchain** — confirm in wallet.
-5. Use **Demo: resolve BTC round** — **Provide actual price**, then **Score round**.
-6. Refresh leaderboard / reopen page as needed; explorer links use **`https://explorer.0g.ai/mainnet/tx/...`**.
+5. Refresh leaderboard / reopen page as needed; explorer links use **`https://explorer.0g.ai/mainnet/tx/...`**. Onchain leaderboard rows for BTC appear after the contract has been settled with **`provideActualPrice`** and **`scoreInputs`** (not triggered from this UI).
 
 ## Current V0 scope
 

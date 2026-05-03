@@ -134,42 +134,6 @@ export async function submitBtcPrediction(params: {
   return { txHash: hash, prediction };
 }
 
-export async function demoProvideActualPrice(
-  address: Address,
-  roundId: bigint,
-  actualPrice: bigint,
-): Promise<Hash> {
-  if (actualPrice === 0n) throw new Error("Actual price cannot be zero.");
-  const walletClient = await getWalletClient(wagmiConfig);
-  if (!walletClient) throw new Error("Connect a wallet on 0G.");
-  const hash = await walletClient.writeContract({
-    address,
-    abi: btcPricePredictionBenchmarkAbi,
-    functionName: "provideActualPrice",
-    args: [roundId, actualPrice],
-    chain: zgChain,
-  });
-  await waitForTransactionReceipt(wagmiConfig, { hash, chainId: zgChain.id });
-  return hash;
-}
-
-export async function demoScoreRound(
-  address: Address,
-  roundId: bigint,
-): Promise<Hash> {
-  const walletClient = await getWalletClient(wagmiConfig);
-  if (!walletClient) throw new Error("Connect a wallet on 0G.");
-  const hash = await walletClient.writeContract({
-    address,
-    abi: btcPricePredictionBenchmarkAbi,
-    functionName: "scoreInputs",
-    args: [roundId],
-    chain: zgChain,
-  });
-  await waitForTransactionReceipt(wagmiConfig, { hash, chainId: zgChain.id });
-  return hash;
-}
-
 export async function readBtcSubmissionError(
   address: Address,
   roundId: bigint,
