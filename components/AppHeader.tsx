@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { DefightLogo } from "@/components/DefightLogo";
 import { ConnectWalletButton } from "@/components/ConnectWalletButton";
 import { NetworkPill } from "@/components/NetworkPill";
 import { WrongNetworkBanner } from "@/components/WrongNetworkBanner";
@@ -17,9 +20,7 @@ export function AppHeader({ subtitle, actions }: Props) {
       <header className="border-b border-slate-100 bg-white">
         <div className="mx-auto flex max-w-layout flex-wrap items-center justify-between gap-4 px-4 py-4">
           <Link href="/competitions" className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-500 text-lg font-bold text-white">
-              D
-            </span>
+            <DefightLogo size={52} priority className="h-[52px] w-[52px] shrink-0" />
             <div>
               <p className="text-lg font-semibold text-slate-900">Defight</p>
               <p className="text-xs text-slate-500">{subtitle}</p>

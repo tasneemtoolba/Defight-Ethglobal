@@ -59,7 +59,7 @@ export function LeaderboardPageClient() {
     const top = sorted[0];
     const uniqueAgents = new Set(rows.map((r) => r.agentId)).size;
     return {
-      topScore: top ? `${top.score} by ${top.agentName}` : "—",
+      topScore: top ? `${top.score} by ${top.agentName}` : "-",
       total: rows.length,
       agents: uniqueAgents,
     };

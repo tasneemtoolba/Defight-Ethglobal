@@ -1,737 +1,270 @@
-# Defight-Ethglobal
+# Defight (Defight-Ethglobal)
 
-Benchmark Defight is a marketplace and reusable evaluation framework for 0G iNFT agents.
+Defight is an onchain benchmark arena for AI agents competing on **0G**.
 
-Anyone can create an AI benchmark challenge, agents compete by generating answers, outputs are evaluated, and public leaderboards show which agents perform best for each task.
+Users can create AI challenges, open a competition, select an AIVerse-style agent, copy the official question, ask the agent, paste the response, and post that response onchain. For the **BTC Price Prediction** track, the deployed **`BTCPricePredictionBenchmark`** contract records integer predictions, supports resolution and scoring, and feeds the in-app leaderboard. Other competitions can run in **mock mode** (localStorage + simulated txs) until wired to Solidity.
 
-The project has two layers:
+## Short description
 
-1. **Benchmark Defight** — the user-facing web app for creating competitions, running agents, comparing outputs, and viewing leaderboards.
-2. **BenchmarkKit** — a reusable TypeScript framework that other builders can use to benchmark their own AI agents on 0G.
+Onchain benchmark arena for AI agents on 0G — create challenges, submit answers, verify on explorer, compare on leaderboards.
 
----
+## Project description
 
-## Why We Built This
+Defight is a hackathon-ready web app plus Solidity benchmarks. Anyone can define a competition question, agents answer (via AIVerse in V0 using a **copy → paste** bridge), and submissions can be anchored on 0G with scores surfaced in the UI.
 
-AI agents are becoming ownable, composable, and monetizable onchain assets. But users still need a trustworthy way to answer:
+**V0 demo flow**
 
-- Which agent is actually good at a specific task?
-- Which agent should I license or use?
-- How did this agent perform compared to others?
-- Can benchmark results be reused as reputation?
+1. Browse or create a competition.
+2. Open a competition — load the official question (`getPrompt()` from contract for BTC, or mock for others).
+3. Select an allowed agent.
+4. **Copy question & open AIVerse** → ask the agent → paste the answer.
+5. **Post response onchain** (wallet on 0G) — for BTC, the app parses a digit price and calls `submitResponse`; mock path simulates a tx.
+6. For BTC demos: optional **Provide actual price** / **Score round** panel to finish the onchain scoring cycle.
+7. View score (when available), tx hash, 0G explorer link, and leaderboard.
 
-Benchmark Defight solves this by turning AI evaluation into an open competition layer for iNFT agents.
+**Resolved competitions** (e.g. seed “SOL Volatility Range”): the detail page shows the question and results preview only — agent selection, paste, and submit steps are hidden.
 
-Instead of relying on vague model descriptions, users can view real benchmark results, compare agent outputs, and choose the best-performing agent for their use case.
+This helps compare agents using verifiable onchain activity where integrated, and a consistent UX everywhere else.
 
----
+## Why we built this
 
-## What It Does
+- Which agent is actually good at this task?
+- Can answers and scores be checked onchain?
+- Can performance feed a public reputation layer later?
 
-Benchmark Defight lets users:
+Defight turns evaluation into a small, public competition loop instead of marketing claims alone.
 
-- Create benchmark challenges.
-- Register AI agents.
-- Connect agents to iNFT identities.
-- Run the same benchmark against multiple agents.
-- Compare outputs side-by-side.
-- Evaluate answers using configurable scoring methods.
-- Publish leaderboard rankings.
-- Request an answer from a specific agent.
-- Build reusable benchmark flows with BenchmarkKit.
+## How it works
 
----
+### 1. Create a challenge
 
-## Core Features
+From **`/competitions/create`**: title, description, question, optional deadline, scoring method, allowed agents, live preview. Published challenges are stored in **localStorage** (merged with seed data) and open at **`/competitions/[id]`**.
 
-### Benchmark Marketplace
+### 2. Select an agent
 
-Users can create benchmarks with:
+From **`/competitions/[id]`**, pick one allowed agent. Seed agents include **Macro Oracle**, **Sentiment Scout**, **Quant Whisperer**, **John Vibes**, **Agent Quanta** (see `lib/mock-data.ts`). Agent IDs are strings today; a future iNFT version can map to `keccak256(abi.encodePacked(nft, tokenId))` or similar.
 
-- title
-- description
-- category
-- prompt
-- expected answer
-- evaluation method
-- scoring rubric
+### 3. Ask the agent (V0)
 
-Example benchmark categories:
+Copy/paste bridge:
 
-- reasoning
-- coding
-- math
-- research
-- creative writing
-- trade/document analysis
-- custom
+1. **Copy question & open AIVerse** — clipboard + new tab to the agent URL.
+2. User asks the agent, then pastes the reply into Defight.
 
----
+Direct AIVerse API integration is a deliberate follow-up.
 
-### iNFT Agent Registry
+### 4. Submit onchain
 
-Agents can register with:
+**BTC + configured address:** `submitResponse(roundId, agentId, uintPrice)` on **`BTCPricePredictionBenchmark`** (see contracts below). The UI extracts the first integer from pasted text for the uint.
 
-- name
-- description
-- owner wallet
-- iNFT token ID
-- iNFT explorer link
-- model/provider metadata
-- memory/intelligence storage URI
-- supported benchmark categories
+**Other / mock:** `lib/contracts/defight.ts` hybrid adapter simulates delay, tx hash, and local leaderboard rows.
 
-Each agent profile acts as a public performance record.
+After confirmation, the UI shows tx link to **0G explorer**, score when derivable, and refreshes leaderboard data.
 
----
+## Core features
 
-### Agent Competition Runs
+| Area | What you get |
+|------|----------------|
+| **Competitions** | `/competitions` — search, filters, cards, recent submissions + leaderboard preview. |
+| **Create** | `/competitions/create` — form + preview; persists locally. |
+| **Submit flow** | `/competitions/[id]` — stepper: question → agent → paste → submit; wrong-network banner; BTC demo operator panel when onchain BTC is enabled. |
+| **Leaderboard** | `/leaderboard` — tabs, stats, table, explorer links. |
+| **Branding** | `public/defight-logo.png`, `DefightLogo` in header/footer, favicon via `metadata.icons` in `app/layout.tsx`. |
 
-A benchmark run sends the same prompt to multiple agents.
+## Tech stack
 
-Each agent returns an answer. The app stores the outputs, evaluates them, and shows the results in a comparison view.
+- **Next.js 14** (App Router), **TypeScript**, **Tailwind CSS**
+- **wagmi v2** + **viem** + **TanStack Query** — 0G chain `16661`, RPC `https://evmrpc.0g.ai` (`lib/wagmi/config.ts`)
+- **Solidity ^0.8.35** benchmarks in `contracts/`
+- **Hardhat** present (`hardhat.config.js`) for optional contract compilation
 
----
+## Smart contracts (`contracts/`)
 
-### Output Comparison Page
+Solidity sources live in **`contracts/`**. There is **no** unified registry contract in-repo yet; these are **template benchmarks** you deploy and point the app at.
 
-The comparison page shows:
+### `BTCPricePredictionBenchmark.sol`
 
-- benchmark prompt
-- each agent's output
-- score per agent
-- evaluation reason
-- winner
-- latency / metadata if available
+Per-round BTC price predictions: agents submit a **non-zero uint** USD-style integer; after the round’s actual price is set, **`scoreInputs`** scores by absolute error and maintains a **top-10** style board (lower error is better onchain; the UI maps to a display score where helpful).
 
-This is the main demo page.
+| Function | Role |
+|----------|------|
+| `getPrompt()` | `view` — canonical question string for this template. |
+| `submitResponse(uint256 roundId, string agentId, uint256 agentResponse)` | Store prediction while round unresolved (`actualPrices[roundId] == 0`). |
+| `provideActualPrice(uint256 roundId, uint256 actualPrice)` | Set ground truth (demo: no access control yet). |
+| `scoreInputs(uint256 roundId)` | After actual is set, compute errors and update `scoreboard`. |
+| `showLeaderboard(uint256 roundId)` | `view` — `ScoreboardElement[10]` for the round. |
 
----
+Comments in-file note TODOs: access control, double-submit guards, time checks — acceptable for hackathon demos.
 
-### Leaderboards
+### `TravellingSalesmanBenchmark.sol`
 
-Leaderboards rank agents by benchmark performance.
+25 “cities” **A–Y** as a permutation path; **`createRound(uint256 round, Point[25] calldata newPoints)`** loads coordinates; **`submitResponse(string agentResponse, string agentId, uint256 roundId)`** validates with **`validateAY`** then **`_computeScore`**; emits **`AnswerSubmitted`**. Checkpoint mappings exist for debugging.
 
-Each leaderboard includes:
+### `IBenchmark.sol`
 
-- agent name
-- average score
-- best score
-- number of runs
-- latest run
-- benchmark category
+**Comment-only** design notes for a future router / template API — **not** a deployable interface file.
 
----
+### Frontend ↔ chain
 
-### BenchmarkKit
-
-BenchmarkKit is the reusable framework behind Benchmark Defight.
-
-It provides utilities for:
-
-- creating benchmarks
-- registering agents
-- requesting agent answers
-- evaluating outputs
-- storing results
-- publishing scores
-- generating leaderboards
-
-Example usage:
+- **ABI + client:** `lib/contracts/btc-benchmark-abi.ts`, `lib/contracts/btc-benchmark-client.ts`
+- **Adapter pattern:** `lib/contracts/adapter-types.ts`, `lib/contracts/defight.ts` — `createHybridAdapter()` wraps mock + BTC reads/writes when `NEXT_PUBLIC_BTC_BENCHMARK_ADDRESS` is set (non-empty). Default deployment address is baked in for demos; set env to `""` to force **mock-only**.
+- **Expected TS surface** (implemented on mock + hybrid where applicable):
 
 ```ts
-import {
-  createBenchmark,
-  registerAgent,
-  runBenchmark,
-  getLeaderboard,
-} from "@benchmark-arena/benchmarkkit";
+getPrompt(competitionId: string): Promise<string>
 
-const benchmark = await createBenchmark({
-  title: "Reasoning Challenge",
-  prompt: "A farmer sells 30% of his crop and keeps 140kg. How much crop did he start with?",
-  evaluationMethod: "llm_judge",
-});
+submitAnswer(params: {
+  competitionId: string;
+  agentId: string;
+  query: string;
+  response: string;
+}): Promise<{
+  txHash: string;
+  score: number | null;
+  predictionUsd?: string;
+  errorUsd?: number;
+}>
 
-const agent = await registerAgent({
-  name: "ReasoningAgent",
-  endpointUrl: "https://example-agent.com/api/generate",
-});
+getLeaderboard(competitionId?: string): Promise<Submission[]>
 
-const run = await runBenchmark({
-  benchmarkId: benchmark.id,
-  agentIds: [agent.id],
-});
-
-const leaderboard = await getLeaderboard(benchmark.id);
+createChallenge(input: CreateChallengeInput): Promise<Competition>
 ```
 
----
-
-## Architecture
+## Repository structure (actual)
 
 ```txt
-User
- |
- | creates benchmark / runs competition
- v
-Next.js Web App
- |
- | calls
- v
-BenchmarkKit Framework
- |
- |-------------------------------|
- |                               |
- v                               v
-Agent Registry              Benchmark Registry
- |                               |
- v                               v
-iNFT Metadata               Benchmark Metadata
- |                               |
- v                               v
-0G Storage                  0G Storage
- |
- v
-Agent Inference / 0G Compute
- |
- v
-Evaluator
- |
- v
-Score Registry
- |
- v
-Leaderboard
-```
-
----
-
-## 0G Integration
-
-Benchmark Defight uses 0G as the foundation for onchain AI infrastructure.
-
-Planned / implemented 0G components:
-
-### 0G Storage
-
-Used for storing:
-
-- benchmark metadata
-- agent metadata
-- output records
-- evaluation results
-- memory or intelligence references for iNFT agents
-
-### 0G Compute
-
-Used for:
-
-- agent inference
-- evaluator inference
-- verifiable AI output generation
-- benchmark scoring workflows
-
-### 0G Chain
-
-Used for:
-
-- benchmark registration
-- agent registration
-- score publishing
-- leaderboard verification
-
-### iNFTs
-
-Agents can be linked to iNFTs, giving them:
-
-- ownable identity
-- persistent metadata
-- embedded intelligence or memory references
-- public benchmark reputation
-
----
-
-## Smart Contracts
-
-The project includes three main contracts.
-
-### BenchmarkRegistry
-
-Registers benchmark metadata onchain.
-
-Stores:
-
-- benchmark ID
-- creator address
-- metadata URI
-- metadata hash
-- creation timestamp
-
-### AgentRegistry
-
-Registers AI agents.
-
-Stores:
-
-- agent ID
-- owner address
-- metadata URI
-- iNFT contract address
-- iNFT token ID
-- creation timestamp
-
-### ScoreRegistry
-
-Publishes benchmark results.
-
-Stores:
-
-- benchmark ID
-- agent ID
-- score
-- result URI
-- result hash
-- timestamp
-
----
-
-## Repository Structure
-
-```txt
-benchmark-arena/
-├── apps/
-│   └── web/
-│       ├── app/
-│       ├── components/
-│       └── lib/
-│
-├── packages/
-│   └── benchmarkkit/
-│       ├── src/
-│       │   ├── benchmark.ts
-│       │   ├── agent.ts
-│       │   ├── evaluator.ts
-│       │   ├── leaderboard.ts
-│       │   ├── storage.ts
-│       │   └── index.ts
-│       └── examples/
-│           └── simple-agent.ts
-│
+Defight-Ethglobal/
+├── app/
+│   ├── layout.tsx
+│   ├── page.tsx                 # redirects to /competitions
+│   ├── providers.tsx            # Wagmi + React Query
+│   ├── globals.css
+│   ├── competitions/
+│   │   ├── page.tsx
+│   │   ├── create/page.tsx
+│   │   └── [id]/page.tsx
+│   └── leaderboard/page.tsx
+├── components/
+│   ├── AppHeader.tsx
+│   ├── DefightLogo.tsx
+│   ├── ConnectWalletButton.tsx
+│   ├── NetworkPill.tsx
+│   ├── WrongNetworkBanner.tsx
+│   ├── HeaderNetworkClient.tsx
+│   ├── CompetitionsPageClient.tsx
+│   ├── CompetitionDetailClient.tsx
+│   ├── CreateChallengeClient.tsx
+│   ├── LeaderboardPageClient.tsx
+│   ├── BtcRoundDemoPanel.tsx
+│   ├── CompetitionCard.tsx
+│   ├── AgentCard.tsx
+│   ├── StepCard.tsx
+│   ├── CopyButton.tsx
+│   ├── StatusBadge.tsx
+│   ├── SuccessCard.tsx
+│   ├── ChallengePreviewCard.tsx
+│   ├── LeaderboardTable.tsx
+│   └── SiteFooter.tsx
 ├── contracts/
-│   ├── src/
-│   │   ├── BenchmarkRegistry.sol
-│   │   ├── AgentRegistry.sol
-│   │   └── ScoreRegistry.sol
-│   └── script/
-│
-├── docs/
-│   ├── architecture.md
-│   ├── demo-script.md
-│   └── bounty-eligibility.md
-│
+│   ├── IBenchmark.sol
+│   ├── BTCPricePredictionBenchmark.sol
+│   └── TravellingSalesmanBenchmark.sol
+├── lib/
+│   ├── types.ts
+│   ├── mock-data.ts
+│   ├── utils.ts
+│   ├── wagmi/config.ts
+│   ├── storage/client-store.ts
+│   └── contracts/
+│       ├── adapter-types.ts
+│       ├── defight.ts
+│       ├── btc-benchmark-abi.ts
+│       └── btc-benchmark-client.ts
+├── public/
+│   └── defight-logo.png
+├── hardhat.config.js
+├── vercel.json                  # "framework": "nextjs"
+├── .env.example
+├── package.json
 └── README.md
 ```
 
----
+## Environment variables
 
-## User Flow
+Copy **`.env.example`** to **`.env.local`** for local overrides. Key public vars:
 
-### 1. Create Benchmark
+| Variable | Purpose |
+|----------|---------|
+| `NEXT_PUBLIC_BTC_BENCHMARK_ADDRESS` | Deployed `BTCPricePredictionBenchmark` on 0G; empty string = mock-only. |
+| `NEXT_PUBLIC_BTC_COMPETITION_ID` | App competition id wired to that contract (default `comp_btc_001`). |
+| `NEXT_PUBLIC_BTC_BENCHMARK_ROUND_ID` | `uint` round passed to `submitResponse` / `showLeaderboard` (default `0`). |
 
-A user creates a new benchmark challenge.
-
-Example:
-
-```txt
-Title: Legal Contract Review Challenge
-Prompt: Review this contract clause and identify the main risk.
-Evaluation Method: LLM Judge
-Rubric:
-- Accuracy: 50%
-- Completeness: 30%
-- Clarity: 20%
-```
-
-The benchmark metadata is stored and registered.
-
----
-
-### 2. Register Agent
-
-An AI agent is registered with metadata and optionally linked to an iNFT.
-
-Example:
-
-```txt
-Name: ContractRiskAgent
-Description: Reviews contracts and identifies legal risks.
-iNFT Token ID: 12
-Memory URI: 0g://agent-memory/contract-risk-agent
-```
-
----
-
-### 3. Run Benchmark
-
-The user selects one benchmark and multiple agents.
-
-BenchmarkKit sends the same task to each agent.
-
----
-
-### 4. Compare Outputs
-
-The app displays each agent's output side-by-side.
-
-The evaluator scores each output using the configured benchmark method.
-
----
-
-### 5. Publish Leaderboard
-
-Scores are saved and shown on the benchmark leaderboard.
-
-The leaderboard becomes a public reputation layer for agents.
-
----
-
-## Evaluation Methods
-
-Benchmark Defight supports multiple scoring methods.
-
-### Exact Match
-
-Useful for deterministic answers.
-
-Example:
-
-```txt
-Expected: 200
-Output: 200
-Score: 100
-```
-
-### Semantic Similarity
-
-Useful when answers may be phrased differently but mean the same thing.
-
-### LLM Judge
-
-Useful for reasoning, writing, research, and open-ended tasks.
-
-The judge evaluates the answer against a rubric and returns:
-
-```json
-{
-  "score": 87,
-  "reason": "The answer correctly identifies the main issue but misses one edge case."
-}
-```
-
-### Human Review
-
-Optional mode where a reviewer manually scores outputs.
-
----
-
-## Example Agent
-
-The repo includes a simple example agent in:
-
-```txt
-packages/benchmarkkit/examples/simple-agent.ts
-```
-
-Example:
-
-```ts
-export async function simpleAgent(prompt: string) {
-  return {
-    output: `I received the benchmark prompt: ${prompt}`,
-    metadata: {
-      model: "simple-agent-v1",
-      latencyMs: 1200,
-    },
-  };
-}
-```
-
----
-
-## API Routes
-
-### Benchmarks
-
-```txt
-POST /api/benchmarks
-GET  /api/benchmarks
-GET  /api/benchmarks/:id
-```
-
-### Agents
-
-```txt
-POST /api/agents
-GET  /api/agents
-GET  /api/agents/:id
-POST /api/agents/:id/request-answer
-```
-
-### Runs
-
-```txt
-POST /api/runs
-GET  /api/runs/:id
-POST /api/runs/:id/evaluate
-```
-
-### Leaderboards
-
-```txt
-GET /api/leaderboard
-GET /api/leaderboard/:benchmarkId
-GET /api/agents/:id/stats
-```
-
----
-
-## Environment Variables
-
-Create a `.env.local` file:
-
-```env
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-
-DATABASE_URL=
-
-PRIVATE_KEY=
-NEXT_PUBLIC_CHAIN_ID=
-NEXT_PUBLIC_RPC_URL=
-
-BENCHMARK_REGISTRY_ADDRESS=
-AGENT_REGISTRY_ADDRESS=
-SCORE_REGISTRY_ADDRESS=
-
-ZEROG_STORAGE_RPC=
-ZEROG_COMPUTE_API_KEY=
-
-OPENAI_API_KEY=
-
-AXL_NODE_URL=
-KEEPERHUB_API_KEY=
-UNISWAP_API_KEY=
-```
-
-Only fill the optional keys for integrations you are using.
-
----
-
-## Getting Started
-
-### 1. Install dependencies
+## Getting started
 
 ```bash
-pnpm install
+npm install
+npm run dev
 ```
 
-### 2. Start the web app
+Open **http://localhost:3000** (redirects to **`/competitions`**).
 
 ```bash
-pnpm dev
+npm run build
+npm run start
 ```
 
-### 3. Run the BenchmarkKit example
+### Compile contracts (optional)
+
+Repo includes **Hardhat**:
 
 ```bash
-pnpm benchmarkkit:example
+npx hardhat compile
 ```
 
-### 4. Compile contracts
+Or use **Foundry** / **Remix** with **`pragma solidity ^0.8.35`**.
 
-```bash
-cd contracts
-forge build
-```
+## Deploy / Vercel
 
-### 5. Deploy contracts
+- **`vercel.json`** sets **`"framework": "nextjs"`** so the project is not treated as a static export expecting a `public` build output.
+- After git push, set the same **`NEXT_PUBLIC_*`** vars in the Vercel project if you override addresses or rounds.
 
-```bash
-forge script script/Deploy.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
-```
+## Demo flow (BTC onchain path)
 
-### 6. Add deployed addresses to `.env.local`
+1. **`/competitions`** → open **BTC Price Prediction**.
+2. Connect wallet → **Switch to 0G** if prompted.
+3. Select an agent → **Copy question & open AIVerse** → get a numeric answer → paste (digits only for contract path).
+4. **Post response onchain** — confirm in wallet.
+5. Use **Demo: resolve BTC round** — **Provide actual price**, then **Score round**.
+6. Refresh leaderboard / reopen page as needed; explorer links use **`https://explorer.0g.ai/mainnet/tx/...`**.
 
-```env
-BENCHMARK_REGISTRY_ADDRESS=0x...
-AGENT_REGISTRY_ADDRESS=0x...
-SCORE_REGISTRY_ADDRESS=0x...
-```
+## Current V0 scope
 
----
+**In**
 
-## Demo Flow
+- Browse / create / open competitions, mock persistence, leaderboard UI.
+- BTC benchmark **read + write** path when address is configured.
+- Resolved competition UX (read-only submission path hidden).
 
-The demo shows the full lifecycle:
+**Out (for now)**
 
-1. Open the homepage.
-2. Create a new benchmark.
-3. Register or select three agents.
-4. Run the benchmark.
-5. Watch agents generate answers.
-6. Compare outputs side-by-side.
-7. View evaluator scores.
-8. Open the leaderboard.
-9. Open an agent profile.
-10. Show iNFT metadata / 0G storage proof.
+- Automatic AIVerse API calls, payments, auth, production oracle, full iNFT lifecycle, TSP contract wired in the app.
 
----
+## Future work
 
-## Bounty Alignment
-
-### 0G — Best Agent Framework, Tooling & Core Extensions
-
-BenchmarkKit is a reusable framework for benchmarking 0G agents.
-
-It provides:
-
-- benchmark creation
-- agent registration
-- output collection
-- evaluation methods
-- score publishing
-- leaderboard generation
-- example agent code
-
-Other builders can use BenchmarkKit to test their own agents.
-
----
-
-### 0G — Best Autonomous Agents, Swarms & iNFT Innovations
-
-Benchmark Defight gives iNFT agents a place to compete and build reputation.
-
-The project supports:
-
-- iNFT-linked agents
-- agent profiles
-- benchmark competitions
-- output comparison
-- public leaderboards
-- embedded memory/intelligence references through storage URIs
-
----
-
-### Optional: Gensyn AXL
-
-AXL can be used as the communication layer between:
-
-- benchmark coordinator node
-- agent nodes
-- evaluator node
-
-This allows agents to receive tasks and submit outputs peer-to-peer.
-
----
-
-### Optional: ENS
-
-ENS can be used for agent identity and discovery.
-
-Examples:
-
-```txt
-reasoning-agent.benchmarkarena.eth
-research-agent.benchmarkarena.eth
-contract-agent.benchmarkarena.eth
-```
-
-ENS can resolve agent addresses and link to agent reputation profiles.
-
----
-
-### Optional: KeeperHub
-
-KeeperHub can be used for reliable onchain execution.
-
-Example flows:
-
-- publishing benchmark scores
-- registering benchmarks
-- distributing rewards
-- settling agent licensing payments
-
----
-
-### Optional: Uniswap API
-
-Uniswap can be used if the project adds payments.
-
-Example flows:
-
-- benchmark entry fees
-- agent licensing payments
-- reward settlement
-- token swaps before payout
-
-If this integration is included, the repo must include `FEEDBACK.md`.
-
----
-
-## Current Status
-
-- [ ] Benchmark creation
-- [ ] Agent registration
-- [ ] Benchmark run execution
-- [ ] Output comparison page
-- [ ] Evaluator module
-- [ ] Leaderboard
-- [ ] BenchmarkKit package
-- [ ] Example agent
-- [ ] Smart contracts
-- [ ] 0G Storage integration
-- [ ] 0G Compute integration
-- [ ] iNFT metadata integration
-- [ ] Optional AXL integration
-- [ ] Optional ENS integration
-- [ ] Optional KeeperHub integration
-- [ ] Optional Uniswap integration
-
----
-
-## Submission Checklist
-
-- [ ] Project name and short description
-- [ ] Public GitHub repo
-- [ ] README with setup instructions
-- [ ] Demo video under 3 minutes
-- [ ] Live demo link
-- [ ] Contract deployment addresses
-- [ ] Explanation of protocol features / SDKs used
-- [ ] Team member names
-- [ ] Telegram and X contact info
-- [ ] Example agent code
-- [ ] Architecture diagram
-- [ ] iNFT explorer link
-- [ ] Proof that agent memory/intelligence is embedded or referenced
-- [ ] Optional KeeperHub feedback write-up
-- [ ] Optional Uniswap `FEEDBACK.md`
-
----
+- AIVerse / Agentverse API for headless “Ask”.
+- Wire **`TravellingSalesmanBenchmark`** the same way as BTC.
+- iNFT-derived agent IDs, 0G Storage for rich metadata, compute-assisted scoring.
 
 ## Team
 
-Add team members here:
+Fill in your hackathon roster:
 
 ```txt
 Name:
 Role:
-Telegram:
-X:
+Telegram / X:
 GitHub:
 ```
-
----
 
 ## License
 

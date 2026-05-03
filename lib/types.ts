@@ -47,6 +47,11 @@ export type SubmitAnswerParams = {
 };
 
 export type SubmitAnswerResult = {
-  score: number;
   txHash: string;
+  /** Mock: always set. On-chain BTC: set after resolution, otherwise null until you run scoring. */
+  score: number | null;
+  /** Parsed integer USD sent to `submitResponse` (BTC benchmark only). */
+  predictionUsd?: string;
+  /** Absolute USD error once actual price is onchain and round scored. */
+  errorUsd?: number;
 };

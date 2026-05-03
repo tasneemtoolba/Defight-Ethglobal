@@ -5,6 +5,8 @@ import type {
   SubmitAnswerResult,
   Submission,
 } from "@/lib/types";
+import type { DefightAdapter } from "@/lib/contracts/adapter-types";
+import { createHybridAdapter } from "@/lib/contracts/btc-benchmark-client";
 import { getAgentById, SEED_COMPETITIONS } from "@/lib/mock-data";
 import {
   appendSubmission,
@@ -17,12 +19,7 @@ import {
 export const EXPLORER_TX_BASE =
   "https://explorer.0g.ai/mainnet/tx/";
 
-export type DefightAdapter = {
-  getPrompt: (competitionId: string) => Promise<string>;
-  submitAnswer: (params: SubmitAnswerParams) => Promise<SubmitAnswerResult>;
-  getLeaderboard: (competitionId?: string) => Promise<Submission[]>;
-  createChallenge: (input: CreateChallengeInput) => Promise<Competition>;
-};
+export type { DefightAdapter } from "@/lib/contracts/adapter-types";
 
 function randomTxHash(): string {
   const hex = "0123456789abcdef";
@@ -83,7 +80,7 @@ const mockAdapter: DefightAdapter = {
       (s) => s.competitionId === competitionId,
     ).length;
     upsertStoredCompetition({ ...c, submissionsCount: nextCount });
-    return { score, txHash };
+    return { score, txHash, predictionUsd: undefined, errorUsd: undefined };
   },
 
   async getLeaderboard(competitionId) {
@@ -113,7 +110,7 @@ const mockAdapter: DefightAdapter = {
   },
 };
 
-let adapter: DefightAdapter = mockAdapter;
+let adapter: DefightAdapter = createHybridAdapter(mockAdapter);
 
 export function setDefightAdapter(next: DefightAdapter) {
   adapter = next;
