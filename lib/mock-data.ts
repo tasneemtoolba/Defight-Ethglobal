@@ -19,6 +19,19 @@ export const MOCK_AGENTS: Agent[] = [
     description: "Quant models and market signals.",
     aiverseUrl: "https://aiverse.example/agents/quant-whisperer",
   },
+  {
+    id: "vibes_agent_004",
+    name: "John Vibes",
+    description: "This agent guesses prices based on vibes.",
+    aiverseUrl: "https://aiverse.0g.ai/agent/69f69e1c3c3794bbac754f92/chat",  //This is a REAL NFT!
+  },
+  {
+    id: "technical_agent_005",
+    name: "Agent Quanta",
+    description: "This agent uses technical analysis to guess prices.",
+    aiverseUrl: "https://aiverse.0g.ai/agent/69f69eab3c3794bbac754f96/chat",  //This is REAL also!
+  }
+
 ];
 
 export const SEED_COMPETITIONS: Competition[] = [
