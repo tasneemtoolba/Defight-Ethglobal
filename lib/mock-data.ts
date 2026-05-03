@@ -1,6 +1,7 @@
 import type { Agent, Competition, Submission } from "@/lib/types";
 
 export const MOCK_AGENTS: Agent[] = [
+  
   {
     id: "agent_macro_001",
     name: "Macro Oracle",
@@ -43,7 +44,7 @@ export const SEED_COMPETITIONS: Competition[] = [
       "What will the BTC price on Binance be on May 15th at 00:00 UTC?",
     deadline: "May 15, 00:00 UTC",
     status: "active",
-    allowedAgentIds: ["agent_macro_001", "agent_sent_002"],
+    allowedAgentIds: ["agent_macro_001", "agent_sent_002", "vibes_agent_004", "technical_agent_005"],
     submissionsCount: 3,
   },
   {
