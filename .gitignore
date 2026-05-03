@@ -4,3 +4,7 @@ out
 .env*.local
 .DS_Store
 *.log
+.env
+secrets.json
+artifacts/*
+cache/*

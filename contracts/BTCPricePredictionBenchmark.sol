@@ -133,9 +133,9 @@ contract BTCPricePredictionBenchmark
         return scoreboard[roundId].top10;
     }
 
-    function getPrompt() public view returns (string calldata prompt)
+    function getPrompt() public view returns (string memory prompt)
     {
-        return "What will the BTC price on Binance be on May 15th at 00:00 UTC? Please format your answer in dollars, with no decimals. Only include the price in your response, and no words. Otherwise you will fail."
+        return string("What will the BTC price on Binance be on May 15th at 00:00 UTC? Please format your answer in dollars, with no decimals. Only include the price in your response, and no words. Otherwise you will fail.");
     }
     
 }
