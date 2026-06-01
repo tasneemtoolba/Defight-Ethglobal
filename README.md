@@ -187,6 +187,12 @@ Defight-Ethglobal/
 └── README.md
 ```
 
+## Security
+
+- **Never commit** `secrets.json`, `.env`, or `.env.local` — they are in `.gitignore`.
+- Hardhat reads **`PRIVATE_KEY`** from the environment (see **`.env.example`**). Do not use a committed `secrets.json`.
+- If a deployer private key was ever pushed to GitHub (including in old history), **rotate that wallet** immediately.
+
 ## Environment variables
 
 Copy **`.env.example`** to **`.env.local`** for local overrides. Key public vars:
@@ -217,6 +223,13 @@ Repo includes **Hardhat**:
 
 ```bash
 npx hardhat compile
+```
+
+Deploy to 0G (set key in shell, never commit it):
+
+```bash
+export PRIVATE_KEY=your_deployer_private_key
+npx hardhat run scripts/deploy-BTC-benchmark.js --network zerog
 ```
 
 Or use **Foundry** / **Remix** with **`pragma solidity ^0.8.35`**.

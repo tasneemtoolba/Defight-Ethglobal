@@ -1,10 +1,27 @@
 node_modules
 .next
 out
-.env*.local
 .DS_Store
+**/.DS_Store
 *.log
+
+# Environment and deploy secrets (never commit)
 .env
+.env.*
+!.env.example
 secrets.json
-artifacts/*
-cache/*
+secrets*.json
+!secrets.json.example
+
+# Hardhat
+cache/
+artifacts/
+
+# IDE
+.idea/
+.vscode/
+
+# Keys
+*.pem
+*.key
+*_rsa

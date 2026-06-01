@@ -1,26 +1,20 @@
-/** @type import('hardhat/config').HardhatUserConfig */
-module.exports = {
-  solidity: "0.8.24",
-};
-
 require("@nomicfoundation/hardhat-toolbox");
-// ethers plugin
-//require('@nomiclabs/hardhat-ethers');
-//require("@nomiclabs/hardhat-web3");
-
 
 const privateKey = process.env.PRIVATE_KEY;
 
-
-
+/** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
-  solidity: "0.8.35", // match your contract
-
+  solidity: {
+    version: "0.8.35",
+    settings: {
+      optimizer: { enabled: true, runs: 200 },
+    },
+  },
   networks: {
     zerog: {
-      url: "https://evmrpc.0g.ai", 
+      url: process.env.ZEROG_RPC_URL || "https://evmrpc.0g.ai",
       chainId: 16661,
-      accounts: [privateKey]
-    }
-  }
+      ...(privateKey ? { accounts: [privateKey] } : {}),
+    },
+  },
 };
