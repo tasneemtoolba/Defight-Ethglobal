@@ -187,21 +187,17 @@ Defight-Ethglobal/
 └── README.md
 ```
 
-## Security
-
-- **Never commit** `secrets.json`, `.env`, or `.env.local` — they are in `.gitignore`.
-- Hardhat reads **`PRIVATE_KEY`** from the environment (see **`.env.example`**). Do not use a committed `secrets.json`.
-- If a deployer private key was ever pushed to GitHub (including in old history), **rotate that wallet** immediately.
-
 ## Environment variables
 
-Copy **`.env.example`** to **`.env.local`** for local overrides. Key public vars:
+Copy **`.env.example`** to **`.env.local`**. Do not commit `.env` or `.env.local` (see `.gitignore`).
 
 | Variable | Purpose |
 |----------|---------|
 | `NEXT_PUBLIC_BTC_BENCHMARK_ADDRESS` | Deployed `BTCPricePredictionBenchmark` on 0G; empty string = mock-only. |
 | `NEXT_PUBLIC_BTC_COMPETITION_ID` | App competition id wired to that contract (default `comp_btc_001`). |
 | `NEXT_PUBLIC_BTC_BENCHMARK_ROUND_ID` | `uint` round passed to `submitResponse` / `showLeaderboard` (default `0`). |
+| `PRIVATE_KEY` | Deployer key for Hardhat only — set in your shell or a local `.env` file, never in git. |
+| `ZEROG_RPC_URL` | Optional; defaults to `https://evmrpc.0g.ai`. |
 
 ## Getting started
 
@@ -225,10 +221,10 @@ Repo includes **Hardhat**:
 npx hardhat compile
 ```
 
-Deploy to 0G (set key in shell, never commit it):
+Deploy to 0G:
 
 ```bash
-export PRIVATE_KEY=your_deployer_private_key
+export PRIVATE_KEY=your_deployer_private_key   # never commit
 npx hardhat run scripts/deploy-BTC-benchmark.js --network zerog
 ```
 

@@ -10,8 +10,6 @@ out
 .env.*
 !.env.example
 secrets.json
-secrets*.json
-!secrets.json.example
 
 # Hardhat
 cache/
